@@ -1,560 +1,798 @@
 <!DOCTYPE html>
 <html lang="ja">
-    
+
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Predict final-outcome from admission data in early COVID-19 patients.</title>
-    <meta content="Predict final-outcome of COVID-19" name="title">
-    <meta content="Predict final-outcome of COVID-19" name="description">
-    <meta content="COVID-19, classifier" name="keywords">
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>Prognosis predicter.</title>
+	<meta content="Predict final outcome of COVID-19" name="title">
+	<meta content="Predict final outcome of COVID-19" name="description">
+	<meta content="COVID-19, classifier" name="keywords">
 	<style>
-    body {background-color: midnightblue;}
-		@import url(https://fonts.googleapis.com/css?family=Exo+2:200i);
-
-:root {
-  /* Base font size */
-  font-size: 10px;   
-  
-  /* Set neon color */
-  --neon-text-color: #f40;
-  --neon-border-color: #08f;
-}
-h1.body {
-  font-family: 'Exo 2', sans-serif;
-  display: flex;
-  justify-content: center; 
-  align-items: center;
-  background: #000;
-  min-height: 100vh;
-}
-h1 {
-  font-size: 2rem;
-  font-weight: 5;
-  font-style: italic;
-  color: #fff;
-  padding: 0.4rem 0.6rem 0.5rem;
-  border: 0.04rem solid #fff;
-  border-radius: 0.2rem;
-  text-transform: uppercase;
-  animation: flicker 1.5s infinite alternate;     
-}
-
-h1::-moz-selection {
-  background-color: var(--neon-border-color);
-  color: var(--neon-text-color);
-}
-
-h1::selection {
-  background-color: var(--neon-border-color);
-  color: var(--neon-text-color);
-}
-
-h1:focus {
-  outline: none;
-}
-
-/* Animate neon flicker */
-@keyframes flicker {
-    
-    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-      
-        text-shadow:
-            -0.2rem -0.2rem 1rem #fff,
-            0.2rem 0.2rem 1rem #fff,
-            0 0 2rem var(--neon-text-color),
-            0 0 4rem var(--neon-text-color),
-            0 0 6rem var(--neon-text-color),
-            0 0 8rem var(--neon-text-color),
-            0 0 10rem var(--neon-text-color);
-        
-        box-shadow:
-            0 0 .5rem #fff,
-            inset 0 0 .5rem #fff,
-            0 0 2rem var(--neon-border-color),
-            inset 0 0 2rem var(--neon-border-color),
-            0 0 4rem var(--neon-border-color),
-            inset 0 0 4rem var(--neon-border-color);        
-    }
-    
-    20%, 24%, 55% {        
-        text-shadow: none;
-        box-shadow: none;
-    }    
-}
-Resources
-     h2   {color:aqua; }
-     input[type="number"] {width: 160px;}
-    </style>
+		body {
+			background-color: powderblue;
+		}
+		h1 {
+			font-family: courier;
+			color: black;
+		}
+		h2 {
+			font-family: courier;
+			color: blue;
+		}
+		p {
+			font-family: courier;
+			color: red;
+		}
+		canvas {
+			background-color: black;
+		}
+	</style>
 </head>
 
 <body>
-    <h1>Predict final-outcome from admission data in early COVID-19 patients.</h1>
-    <h2><span style="color:aqua;">input admission data.</h2>
-    
-    <!-- Warning for javascript not enabling -->
-    <noscript>
-        <p><span style="color:red;">It does not work!</p>
-        <p><span style="color:red;">Please turn on Javascript in your browser!</p>
-    </noscript>
+    <h1>Prognosis predicter.</h1>
+	<h2><span style="color:black;">input admission data.</h2>
 
-    <form name="form" id="gahwm"  action="">
+	<form name="form" id="gahwm" action="">
 		<table border="1" width="650" cellspacing="0" cellpadding="1" bordercolor="white">
-		<tr>
-			<td bgcolor="aliceblue">Sex</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Sex_female" name="Sex" value="0" >Female
-			  <input type="radio" id="Sex_male" name="Sex" value="1" >Male
-			</td>
-		</tr>
-		<tr>
-			<td bgcolor="aliceblue">Time from onset</td>
-			<td bgcolor="aliceblue"><input type="number" id="Time_from_onset" placeholder="◯◯day"></td>
-		</tr>
-		<tr>
-			<td bgcolor="aliceblue">Age</td>
-			<td bgcolor="aliceblue"><input type="number" id="Age" placeholder="◯◯years"></td>
-		</tr>
-		<tr>
-			<td bgcolor="aliceblue">BMI</td>
-			<td bgcolor="aliceblue"><input type="number" id="BMI" placeholder="weight(kg)/height^2(m)"></td>
-		</tr>
-		<tr>
-			<td bgcolor="aliceblue">SpO₂</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="SpO2_0" name="SpO2" value="0" >SpO₂ ≥96％
-			  <input type="radio" id="SpO2_1" name="SpO2" value="1" >93%＜SpO₂＜96%
-              <input type="radio" id="SpO2_2" name="SpO2" value="2" >SpO₂≤93％ or endotracheal intubation
-			</td>
-		</tr>
-		<tr>
-			<td bgcolor="aliceblue">Body temperature</td>
-			<td bgcolor="aliceblue"><input type="number" id="Body_temperature" placeholder="◯◯℃"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Diabetes</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Diabetes_0" name="Diabetes" value="0" >don't have
-			  <input type="radio" id="Diabetes_1" name="Diabetes" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Hypertension</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Hypertension_0" name="Hypertension" value="0" >don't have
-			  <input type="radio" id="Hypertension_1" name="Hypertension" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Hyperlipemia</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Hyperlipemia_0" name="Hyperlipemia" value="0" >don't have
-			  <input type="radio" id="Hyperlipemia_1" name="Hyperlipemia" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Hyperuricemia</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Hyperuricemia_0" name="Hyperuricemia" value="0" >don't have
-			  <input type="radio" id="Hyperuricemia_1" name="Hyperuricemia" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Chronic obstructive pulmonary disease</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Chronic_obstructive_pulmonary_disease_0" name="Chronic_obstructive_pulmonary_disease" value="0" >don't have
-			  <input type="radio" id="Chronic_obstructive_pulmonary_disease_1" name="Chronic_obstructive_pulmonary_disease" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Cardio vasucular disease</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Cardio_vasucular_disease_0" name="Cardio_vasucular_disease" value="0" >don't have
-			  <input type="radio" id="Cardio_vasucular_disease_1" name="Cardio_vasucular_disease" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Smoking history</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Smoking_history_0" name="Smoking_history" value="0" >never
-			  <input type="radio" id="Smoking_history_1" name="Smoking_history" value="1" >experienced smoker
-              <input type="radio" id="Smoking_history_2" name="Smoking_history" value="2" >current smoker
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Malignant neoplasm</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Malignant_neoplasm_0" name="Malignant_neoplasm" value="0" >never
-			  <input type="radio" id="Malignant_neoplasm_1" name="Malignant_neoplasm" value="1" >remission
-              <input type="radio" id="Malignant_neoplasm_2" name="Malignant_neoplasm" value="2" >continuing
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Asthma</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Asthma" name="Asthma" value="0" >don't have
-			  <input type="radio" id="Asthma" name="Asthma" value="1" >have
-			</td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">D-dimer</td>
-			<td bgcolor="aliceblue"><input type="number" id="D_dimer" placeholder="◯◯μg/mL"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">C-reactive protein</td>
-			<td bgcolor="aliceblue"><input type="number" id="C_reactive_protein" placeholder="◯◯mg/dL"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Lactate Dehydrogenase</td>
-			<td bgcolor="aliceblue"><input type="number" id="Lactate_dehydrogenase" placeholder="◯◯U/L"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Lymphocyte</td>
-			<td bgcolor="aliceblue"><input type="number" id="Lymphocyte" placeholder="◯◯/uL"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Creatinine</td>
-			<td bgcolor="aliceblue"><input type="number" id="Creatinine" placeholder="◯◯mg/dL"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Urea nitrogen</td>
-			<td bgcolor="aliceblue"><input type="number" id="Urea_nitrogen" placeholder="◯◯mg/dL"></td>
-		</tr>
-        <tr>
-			<td bgcolor="aliceblue">Chest_radiograph</td>
-			<td bgcolor="aliceblue">
-			  <input type="radio" id="Chest_radiograph_0" name="Chest_radiograph" value="0" >no pneumonia
-			  <input type="radio" id="Chest_radiograph_1" name="Chest_radiograph" value="1" >with pneumonia area less than half of the lung fields
-              <input type="radio" id="Chest_radiograph_2" name="Chest_radiograph" value="2" >with pneumonia area more than half of the lung fields
-			</td>
-		</tr>
+			<tr>
+				<td bgcolor="aliceblue">Sex</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Sex_female" name="Sex" value="0">Female
+					<input type="radio" id="Sex_male" name="Sex" value="1">Male
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Time from onset</td>
+				<td bgcolor="aliceblue"><input type="number" id="Time_from_onset" placeholder="◯◯day"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Age</td>
+				<td bgcolor="aliceblue"><input type="number" id="Age" placeholder="◯◯years"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">BMI</td>
+				<td bgcolor="aliceblue"><input type="number" id="BMI" placeholder="weight(kg)/height^2(m)"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">SpO₂</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="SpO2_0" name="SpO2" value="0">SpO₂ ≥96％
+					<input type="radio" id="SpO2_1" name="SpO2" value="1">93%＜SpO₂＜96%
+					<input type="radio" id="SpO2_2" name="SpO2" value="2">SpO₂≤93％ or endotracheal intubation
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Body temperature</td>
+				<td bgcolor="aliceblue"><input type="number" id="Body_temperature" placeholder="◯◯℃"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Diabetes</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Diabetes_0" name="Diabetes" value="0" checked = "checked">don't have
+					<input type="radio" id="Diabetes_1" name="Diabetes" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Hypertension</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Hypertension_0" name="Hypertension" value="0" checked = "checked">don't have
+					<input type="radio" id="Hypertension_1" name="Hypertension" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Hyperlipemia</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Hyperlipemia_0" name="Hyperlipemia" value="0" checked = "checked">don't have
+					<input type="radio" id="Hyperlipemia_1" name="Hyperlipemia" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Hyperuricemia</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Hyperuricemia_0" name="Hyperuricemia" value="0" checked = "checked">don't have
+					<input type="radio" id="Hyperuricemia_1" name="Hyperuricemia" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Chronic obstructive pulmonary disease</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Chronic_obstructive_pulmonary_disease_0"
+						name="Chronic_obstructive_pulmonary_disease" value="0" checked = "checked">don't have
+					<input type="radio" id="Chronic_obstructive_pulmonary_disease_1"
+						name="Chronic_obstructive_pulmonary_disease" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Cardio vasucular disease</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Cardio_vasucular_disease_0" name="Cardio_vasucular_disease" value="0" checked = "checked">don't
+					have
+					<input type="radio" id="Cardio_vasucular_disease_1" name="Cardio_vasucular_disease" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Smoking history</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Smoking_history_0" name="Smoking_history" value="0" checked = "checked">never
+					<input type="radio" id="Smoking_history_1" name="Smoking_history" value="1">experienced smoker
+					<input type="radio" id="Smoking_history_2" name="Smoking_history" value="2">current smoker
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Malignant neoplasm</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Malignant_neoplasm_0" name="Malignant_neoplasm" value="0" checked = "checked">never
+					<input type="radio" id="Malignant_neoplasm_1" name="Malignant_neoplasm" value="1">remission
+					<input type="radio" id="Malignant_neoplasm_2" name="Malignant_neoplasm" value="2">continuing
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Asthma</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Asthma" name="Asthma" value="0" checked = "checked">don't have
+					<input type="radio" id="Asthma" name="Asthma" value="1">have
+				</td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">D-dimer</td>
+				<td bgcolor="aliceblue"><input type="number" id="D_dimer" placeholder="◯◯μg/mL"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">C-reactive protein</td>
+				<td bgcolor="aliceblue"><input type="number" id="C_reactive_protein" placeholder="◯◯mg/dL"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Lactate Dehydrogenase</td>
+				<td bgcolor="aliceblue"><input type="number" id="Lactate_dehydrogenase" placeholder="◯◯U/L"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Lymphocyte</td>
+				<td bgcolor="aliceblue"><input type="number" id="Lymphocyte" placeholder="◯◯/uL"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Creatinine</td>
+				<td bgcolor="aliceblue"><input type="number" id="Creatinine" placeholder="◯◯mg/dL"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Urea nitrogen</td>
+				<td bgcolor="aliceblue"><input type="number" id="Urea_nitrogen" placeholder="◯◯mg/dL"></td>
+			</tr>
+			<tr>
+				<td bgcolor="aliceblue">Chest Xray finding</td>
+				<td bgcolor="aliceblue">
+					<input type="radio" id="Chest_radiograph_0" name="Chest_radiograph" value="0">no pneumonia
+					<input type="radio" id="Chest_radiograph_1" name="Chest_radiograph" value="1">with pneumonia area
+					less than half of the lung fields
+					<input type="radio" id="Chest_radiograph_2" name="Chest_radiograph" value="2">with pneumonia area
+					more than half of the lung fields
+				</td>
+			</tr>
 		</table>
-
-		<p><span style="color:cyan;">After entering data, please push the bottun.</p>
-		<input type="button" value="　　　　　　　　　　　　　　　Calculate　　　　　　　　　　　　　　　　" onClick="keisan(this)" >
-		
-		<div id="DisplayProbability" style="font-family: courier; color:white; font-size: 120%;">Result : <COde></COde> <span id="Predict"></span></div>
 	</form>
 
-    <!-- Load TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
-
-    <script> 
-    <!-- keisan(): OnClick, analyze input, pass to Deep Learning inference [run()], display result  [Predict_Finaloutcome] -->
-    let Predict_Finaloutcome;
     
-    async function keisan() {
-    <!--  analyze input -->
-	// Checking Sex input
-	let input_Sex = document.querySelector("input[name=Sex]:checked");
-	if( input_Sex ) {
-		Sex = input_Sex.value;
-		console.log(Sex);
-	}
-	else { // Alert when no input for Sex
-	    alert("Please select Sex");
-		return 0;
-	}
-	//console.log(gender);	
+	<!-- clinical data judge bottun -->
+	<p><span style="color:rgb(8, 87, 246);">After entering data, please push the bottun.</p>
+	<input type="button" value="　Prediction by clinical data　" onClick="keisan_clinicaldataOnly(this)"><br>
+	<!-- clinical + blood data judge bottun -->
+	<input type="button" value="　Prediction by clinical + blood data　" onClick="keisan_clinicalblooddata(this)"><br>
+	<!-- clinical + blood + chest X-ray images data judge bottun -->
+	<input type="button" value="　Prediction by clinical + blood + chest X-ray judged data　" onClick="keisan_clinicalbloodXraydata(this)"><br>
+	<!-- clinical + blood + chest X-ray images data judge bottun -->
+	<input type="button" value="　Prediction by clinical + blood + chest X-ray imaging below　" onClick="keisan_clinicalbloodimaging(this)">
 	
-	// Get Time from onset value
-	targetElement = document.getElementById('Time_from_onset');
-	let Time_from_onset = targetElement.value;
-	//console.log(Time from onset);
-	// Alert when no input at Time from onset
-	// isNaN will be true if invalid number was entered
-	if ((! Time_from_onset) || isNaN(Time_from_onset)) {  // Alert when no input for Time from onset
-		alert("Please input Time from onset");
-		return 0;
-	} 
 
-	// Get Age value
-	targetElement = document.getElementById('Age');
-	let Age = targetElement.value;
-	//console.log(Age);
-	// Alert when no input at Age
-	// isNaN will be true if invalid number was entered
-	if ((! Age) || isNaN(Age)) {  // Alert when no input for Age
-		alert("Please input Age");
-		return 0;
-	} 
+	<div style="font-family: courier; color:black; font-size: 120%;">Result : <span id="Predict"></span></div>
 
-	// Get BMI value
-	targetElement = document.getElementById('BMI');
-	let BMI = targetElement.value;
-	//console.log(BMI);
-	// Alert when no input at BMI
-	// isNaN will be true if invalid number was entered
-	if ((! BMI) || isNaN(BMI)) {  // Alert when no input for BMI
-		alert("Please input BMI");
-		return 0;
-	} 
+	<p>Select the file or drag and drop the image onto here.</p>
+	<canvas id="xp-input" width="720" height="720">Browser does not support canvas.</canvas>
 
-    // Checking SpO₂ input
-	let input_SpO2 = document.querySelector("input[name=SpO2]:checked");
-	if( input_SpO2 ) {
-		SpO2 = input_SpO2.value;
-		console.log(SpO2);
-	}
-	else { // Alert when no input for SpO₂
-	    alert("Please select SpO₂");
-		return 0;
-	}
-	//console.log(SpO₂);	
+	<!-- Select file with input tag.-->
+	<br> <input type="file" id="fileInput" /> <br>
 
-	// Get Body temperature value
-	targetElement = document.getElementById('Body_temperature');
-	let Body_temperature = targetElement.value;
-	//console.log(Body temperature);
-	// Alert when no input at Body temperature
-	// isNaN will be true if invalid number was entered
-	if ((! Body_temperature) || isNaN(Body_temperature)) {  // Alert when no input for Body temperature
-		alert("Please input Body temperature");
-		return 0;
-	} 
-    
-	// Checking Diabetes input
-	let input_Diabetes = document.querySelector("input[name=Diabetes]:checked");
-	if( input_Diabetes ) {
-		Diabetes = input_Diabetes.value;
-		console.log(Diabetes);
-	}
-	else { // Alert when no input for Diabetes
-	    alert("Please select Diabetes");
-		return 0;
-	}
-	//console.log(Diabetes);	
-    
-	// Checking Hypertension input
-	let input_Hypertension = document.querySelector("input[name=Hypertension]:checked");
-	if( input_Hypertension ) {
-		Hypertension = input_Hypertension.value;
-		console.log(Hypertension);
-	}
-	else { // Alert when no input for Hypertension
-	    alert("Please select Hypertension");
-		return 0;
-	}
-	//console.log(Hypertension);
-    
-	// Checking Hyperlipemia input
-	let input_Hyperlipemia = document.querySelector("input[name=Hyperlipemia]:checked");
-	if( input_Hyperlipemia ) {
-		Hyperlipemia = input_Hyperlipemia.value;
-		console.log(Hyperlipemia);
-	}
-	else { // Alert when no input for Hyperlipemia
-	    alert("Please select Hyperlipemia");
-		return 0;
-	}
-	//console.log(Hyperlipemia);
+	<p>The input image scaled to 360 × 360 is shown below.</p>
+	<canvas id="decoded-area" width="360" height="360">Browser does not support canvas.</canvas>
 
-    // Checking Hyperuricemia input
-	let input_Hyperuricemia = document.querySelector("input[name=Hyperuricemia]:checked");
-	if( input_Hyperuricemia ) {
-		Hyperuricemia = input_Hyperuricemia.value;
-		console.log(Hyperuricemia);
-	}
-	else { // Alert when no input for Hyperuricemia
-	    alert("Please select Hyperuricemia");
-		return 0;
-	}
-	//console.log(Hyperuricemia);
+	<script>
+		// The amount of time the drag element overlaps the drop element
+		window.addEventListener("dragover", function (evt) {
+			evt.preventDefault();  // Turn off the browser's default image display processing
+		}, false);
+	</script>
+
+	<!-- Load TensorFlow.js: https://www.tensorflow.org/js/tutorials/setup?hl=ja -->
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+
+	<script>
+		// Loading the model
+		let PNEUMONIAmodel;
+		async function LoadPNEUMONIAmodel() {
+		  // Load PNEUMONIA model
+		  PNEUMONIAmodel = await tf.loadLayersModel('./tmdu_pneumonia_model_js/model.json');
+		}
+		LoadPNEUMONIAmodel();
+        
+		let model_clinicaldata;
+        async function Loadmodel_clinicaldata() {
+		  // Load the model of clinical data
+          model_clinicaldata = await tf.loadLayersModel('./tfjs_model_clinicaldata/model.json');
+		}
+		Loadmodel_clinicaldata();
+
+        let model_clinicalblooddata;
+        async function Loadmodel_clinicalblooddata() {
+		  // Load the model of clinical and blood data model
+          model_clinicalblooddata = await tf.loadLayersModel('./tfjs_model_clinicalblooddata/model.json');
+		}
+		Loadmodel_clinicalblooddata();
+		
+		let model_clinicalbloodXraydata;
+        async function Loadmodel_clinicalbloodXraydata() {
+		  // Load the model of clinical, blood and X-ray data model
+          model_clinicalbloodXraydata = await tf.loadLayersModel('./tfjs_model_clinicalbloodXraydata/model.json');
+		}
+		Loadmodel_clinicalbloodXraydata();
+		
+		// XP input area
+		const CanvasXpInput = document.getElementById("xp-input");
+		const ContextXpInput = CanvasXpInput.getContext('2d');
+
+		// Display area at 360 × 360
+		const CanvasForAI = document.getElementById("decoded-area");
+		const ContextForAI = CanvasForAI.getContext('2d');
+
+		// Results display area
+		<!-- set display area, treshould -->
+		let elem = document.getElementById('DisplayProbability')
+		cutoff = 0.5;
+
+		// Display the contents of the input area in the 360×360 display area
+		function DrawInputForAI() {
+			ContextForAI.drawImage(CanvasXpInput, 0, 0, 360, 360);
+			//console.log(ContextForAI);
+		}
+
+		// Get element of input tag
+		const fileInput = document.getElementById("fileInput");
+
+		let ProbabilityForAbnormal;
+        
+		let image_filename = "";
+		// Load the file if it is selected
+		fileInput.addEventListener("change", function (event) {
+			image_filename = event.target.files[0];
+			console.log(image_filename);
+			readFile(image_filename);
+		});
+
+		// Load the file if it is dropped
+		window.addEventListener("drop", function (evt) {
+			evt.preventDefault();  // Turn off the browser's default image display processing
+			image_filename = evt.dataTransfer.files[0];
+			console.log(image_filename);
+			readFile(image_filename);
+		});
+
+		// FileReader : Function to read file using API
+		function readFile(file) {
+			let image = new Image();
+			const reader = new FileReader();
+			// Load the file
+			reader.readAsDataURL(file);
+			// Display results when file loading is complete
+			reader.onload = function (event) {
+				// Load the image
+				image.src = reader.result;
+				//console.log(image.src);
+				// Run after loading the image
+				image.onload = function () {
+					// Display the image on canvas
+					ContextXpInput.drawImage(image, 0, 0, 720, 720);
+					DrawInputForAI();
+				}
+			};
+		}
+
+		// Pneumonia diagnosis
+		function judge_Pneumonia() {
+			//360×360 Import the image data of the XP display area
+			// https://js.tensorflow.org/api/1.0.0/#browser.fromPixels
+			tfData = tf.browser.fromPixels(CanvasForAI, 3);
+			// Make it a floating point but do not divide by 255
+			// Add more dimensions to [360,360,3] -> [1,360,360,3]
+			tfAIdata = tfData.toFloat().expandDims();
+			//tfAIdata = tfData.toFloat().div(tf.scalar(255)).expandDims();
+			// Inference
+			runInference(tfAIdata);
+			console.log(ProbabilityForAbnormal);
+			return ProbabilityForAbnormal;
+		};
+  
+	    //  Deep Learning inference
+			function runInference(x1) {
+				// Use tf.tidy to prevent memory leaks
+				tf.tidy(() => {
+					const y1 = PNEUMONIAmodel.predict(x1);
+					console.log(y1);
+					ProbabilityForAbnormal = y1.reshape([-1]).arraySync()[0];
+					return;
+				});
+			}
+		// End of Deep Learning inference
+
+	    //keisan(): OnClick, analyze input, pass to Deep Learning inference [run()], display result  [Predict_Finaloutcome]
+		let Predict_Finaloutcome;
+
+		// input data
+		let Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+			Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, Chest_radiograph;
+		// check if all the input completed
+		// return 0
+		// if input is not completed then alart and return 0
+		// if all the inputs are completed then alart and return 1
+		// analyze input
+		function check_input_of_clinicaldata() {
+			// Checking Sex input
+			input_Sex = document.querySelector("input[name=Sex]:checked");
+			if (input_Sex) {
+				Sex = input_Sex.value;
+				console.log(Sex);
+			}
+			else { // Alert when no input for Sex
+				alert("Please select Sex");
+				return 0;
+			}
+			//console.log(gender);
+
+			// Get Time from onset value
+			targetElement = document.getElementById('Time_from_onset');
+			Time_from_onset = targetElement.value;
+			console.log(Time_from_onset);
+			// Alert when no input at Time from onset
+			// isNaN will be true if invalid number was entered
+			if ((!Time_from_onset) || isNaN(Time_from_onset)) { // Alert when no input for Time from onset
+				alert("Please input Time from onset");
+				return 0;
+			}
+
+			// Get Age value
+			targetElement = document.getElementById('Age');
+			Age = targetElement.value;
+			console.log(Age);
+			// Alert when no input at Age
+			// isNaN will be true if invalid number was entered
+			if ((!Age) || isNaN(Age)) { // Alert when no input for Age
+				alert("Please input Age");
+				return 0;
+			}
+
+			// Get BMI value
+			targetElement = document.getElementById('BMI');
+			BMI = targetElement.value;
+			console.log(BMI);
+			// Alert when no input at BMI
+			// isNaN will be true if invalid number was entered
+			if ((!BMI) || isNaN(BMI)) { // Alert when no input for BMI
+				alert("Please input BMI");
+				return 0;
+			}
+
+			// Checking SpO₂ input
+			input_SpO2 = document.querySelector("input[name=SpO2]:checked");
+			if (input_SpO2) {
+				SpO2 = input_SpO2.value;
+				console.log(SpO2);
+			}
+			else { // Alert when no input for SpO₂
+				alert("Please select SpO₂");
+				return 0;
+			}
+			//console.log(SpO₂);
+
+			// Get Body temperature value
+			targetElement = document.getElementById('Body_temperature');
+			Body_temperature = targetElement.value;
+			//console.log(Body temperature);
+			// Alert when no input at Body temperature
+			// isNaN will be true if invalid number was entered
+			if ((!Body_temperature) || isNaN(Body_temperature)) { // Alert when no input for Body temperature
+				alert("Please input Body temperature");
+				return 0;
+			}
+
+			// Checking Diabetes input
+			input_Diabetes = document.querySelector("input[name=Diabetes]:checked");
+			if (input_Diabetes) {
+				Diabetes = input_Diabetes.value;
+				console.log(Diabetes);
+			}
+			else { // Alert when no input for Diabetes
+				alert("Please select Diabetes");
+				return 0;
+			}
+			//console.log(Diabetes);
+
+			// Checking Hypertension input
+			input_Hypertension = document.querySelector("input[name=Hypertension]:checked");
+			if (input_Hypertension) {
+				Hypertension = input_Hypertension.value;
+				console.log(Hypertension);
+			}
+			else { // Alert when no input for Hypertension
+				alert("Please select Hypertension");
+				return 0;
+			}
+			//console.log(Hypertension);
+
+			// Checking Hyperlipemia input
+			input_Hyperlipemia = document.querySelector("input[name=Hyperlipemia]:checked");
+			if (input_Hyperlipemia) {
+				Hyperlipemia = input_Hyperlipemia.value;
+				console.log(Hyperlipemia);
+			}
+			else { // Alert when no input for Hyperlipemia
+				alert("Please select Hyperlipemia");
+				return 0;
+			}
+			//console.log(Hyperlipemia);
+
+			// Checking Hyperuricemia input
+			input_Hyperuricemia = document.querySelector("input[name=Hyperuricemia]:checked");
+			if (input_Hyperuricemia) {
+				Hyperuricemia = input_Hyperuricemia.value;
+				console.log(Hyperuricemia);
+			}
+			else { // Alert when no input for Hyperuricemia
+				alert("Please select Hyperuricemia");
+				return 0;
+			}
+			//console.log(Hyperuricemia);
+
+			// Checking Chronic obstructive pulmonary disease input
+			input_Chronic_obstructive_pulmonary_disease =
+				document.querySelector("input[name=Chronic_obstructive_pulmonary_disease]:checked");
+			if (input_Chronic_obstructive_pulmonary_disease) {
+				Chronic_obstructive_pulmonary_disease = input_Chronic_obstructive_pulmonary_disease.value;
+				console.log(Chronic_obstructive_pulmonary_disease);
+			}
+			else { // Alert when no input for Chronic obstructive pulmonary disease
+				alert("Please select Chronic obstructive pulmonary disease");
+				return 0;
+			}
+			//console.log(Chronic obstructive pulmonary disease);
+
+			// Checking Cardio vasucular disease input
+			input_Cardio_vasucular_disease = document.querySelector("input[name=Cardio_vasucular_disease]:checked");
+			if (input_Cardio_vasucular_disease) {
+				Cardio_vasucular_disease = input_Cardio_vasucular_disease.value;
+				console.log(Cardio_vasucular_disease);
+			}
+			else { // Alert when no input for Cardio vasucular disease
+				alert("Please select Cardio vasucular disease");
+				return 0;
+			}
+			//console.log(Cardio vasucular disease);
+
+			// Checking Smoking history input
+			input_Smoking_history = document.querySelector("input[name=Smoking_history]:checked");
+			if (input_Smoking_history) {
+				Smoking_history = input_Smoking_history.value;
+				console.log(Smoking_history);
+			}
+			else { // Alert when no input for Smoking history
+				alert("Please select Smoking history");
+				return 0;
+			}
+			//console.log(Smoking history);
+
+			// Checking Malignant neoplasm input
+			input_Malignant_neoplasm = document.querySelector("input[name=Malignant_neoplasm]:checked");
+			if (input_Malignant_neoplasm) {
+				Malignant_neoplasm = input_Malignant_neoplasm.value;
+				console.log(Malignant_neoplasm);
+			}
+			else { // Alert when no input for Malignant neoplasm
+				alert("Please select Malignant neoplasm");
+				return 0;
+			}
+			//console.log(Malignant neoplasm);
+
+			// Checking Asthma input
+			input_Asthma = document.querySelector("input[name=Asthma]:checked");
+			if (input_Asthma) {
+				Asthma = input_Asthma.value;
+				console.log(Asthma);
+			}
+			else { // Alert when no input for Asthma
+				alert("Please select Asthma");
+				return 0;
+			}
+			//console.log(Asthma);
+			return 1;
+		}
+		// End of function check_input_of_clinicaldata
+
+		function check_input_of_blood_data() {
+			// Get D-dimer value
+			targetElement = document.getElementById('D_dimer');
+			D_dimer = targetElement.value;
+			//console.log(D-dimer);
+			// Alert when no input at D-dimer
+			// isNaN will be true if invalid number was entered
+			if ((!D_dimer) || isNaN(D_dimer)) {  // Alert when no input for D-dimer
+				alert("Please input D-dimer");
+				return 0;
+			}
+
+			// Get C-reactive protein value
+			targetElement = document.getElementById('C_reactive_protein');
+			C_reactive_protein = targetElement.value;
+			//console.log(C-reactive protein);
+			// Alert when no input at C-reactive protein
+			// isNaN will be true if invalid number was entered
+			if ((!C_reactive_protein) || isNaN(C_reactive_protein)) {  // Alert when no input for C-reactive protein
+				alert("Please input C-reactive protein");
+				return 0;
+			}
+
+			// Get Lactate Dehydrogenase value
+			targetElement = document.getElementById('Lactate_dehydrogenase');
+			Lactate_dehydrogenase = targetElement.value;
+			//console.log(Lactate Dehydrogenase);
+			// Alert when no input at Lactate Dehydrogenase
+			// isNaN will be true if invalid number was entered
+			if ((!Lactate_dehydrogenase) || isNaN(Lactate_dehydrogenase)) {  // Alert when no input for Lactate Dehydrogenase
+				alert("Please input Lactate Dehydrogenase");
+				return 0;
+			}
+
+			// Get Lymphocyte value
+			targetElement = document.getElementById('Lymphocyte');
+			Lymphocyte = targetElement.value;
+			//console.log(Lymphocyte);
+			// Alert when no input at Lymphocyte
+			// isNaN will be true if invalid number was entered
+			if ((!Lymphocyte) || isNaN(Lymphocyte)) {  // Alert when no input for Lymphocyte
+				alert("Please input Lymphocyte");
+				return 0;
+			}
+
+			// Get Creatinine value
+			targetElement = document.getElementById('Creatinine');
+			Creatinine = targetElement.value;
+			//console.log(Creatinine);
+			// Alert when no input at Creatinine
+			// isNaN will be true if invalid number was entered
+			if ((!Creatinine) || isNaN(Creatinine)) {  // Alert when no input for Creatinine
+				alert("Please input Creatinine");
+				return 0;
+			}
+
+			// Get Urea nitrogen value
+			targetElement = document.getElementById('Urea_nitrogen');
+			Urea_nitrogen = targetElement.value;
+			//console.log(Urea nitrogen);
+			// Alert when no input at Urea nitrogen
+			// isNaN will be true if invalid number was entered
+			if ((!Urea_nitrogen) || isNaN(Urea_nitrogen)) {  // Alert when no input for Urea nitrogen
+				alert("Please input Urea nitrogen");
+				return 0;
+			}
+
+			return 1;
+		}
+		// End of function check_input_of_blood_data
+
+		function check_input_of_Chest_radiographdata() {
+			// Checking Chest radiograph input
+			input_Chest_radiograph = document.querySelector("input[name=Chest_radiograph]:checked");
+			if (input_Chest_radiograph) {
+				Chest_radiograph = input_Chest_radiograph.value;
+				console.log(Chest_radiograph);
+			}
+			else { // Alert when no input for Chest radiograph
+				alert("Please select Chest X-ray finding");
+				return 0;
+			}
+			//console.log(Chest radiograph);
+			return 1;
+		}
+		// End of function check_input_of_Chest_radiographdata
+
+        function check_input_of_Chest_radiographimage() {
+			// Checking Chest radiograph image input
+			if (image_filename =="") { 
+				// Alert when no input for Chest radiograph image
+				alert("Please input Chest X-ray image");
+				return 0;
+			}
+			return 1;
+		}
+		// End of function check_input_of_Chest_radiographimage
+
+		//  Deep Learning inference
+		async function run_clinicaldataOnly(Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+			Smoking_history, Malignant_neoplasm, Asthma) {
+			// return after setting Predict_Finaloutcome
+            tf.tidy(() => {
+				const x1 = tf.tensor2d([[Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+				Smoking_history, Malignant_neoplasm, Asthma]]);
+			    x1.print();
+			    const y1 = model_clinicaldata.predict(x1).argMax(-1);
+			    y1.print();
+
+			    // set Result
+			    Predict_Finaloutcome = y1.reshape([-1]).arraySync()[0];
+			    console.log(Predict_Finaloutcome)
+			});
+		    }
+		// End of run_clinicaldataonly(): Deep Learning inference 
+
+		async function run_clinicalblooddata(Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+			Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen) {
+			// return after setting Predict_Finaloutcome
+			tf.tidy(() => {
+            const x1 = tf.tensor2d([[Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+				Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen]]);
+			x1.print();
+			const y1 = model_clinicalblooddata.predict(x1).argMax(-1);
+			y1.print();
+
+			// set Result
+			Predict_Finaloutcome = y1.reshape([-1]).arraySync()[0];
+			console.log(Predict_Finaloutcome)
+			});
+		}
+		// End of run_clinicalblooddata(): Deep Learning inference
+        
+        async function run_clinicalbloodXraydata(Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+			Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, Chest_radiograph) {
+			// return after setting Predict_Finaloutcome
+			tf.tidy(() => {
+			const x1 = tf.tensor2d([[Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+				Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, Chest_radiograph]]);
+			x1.print();
+            const y2 = model_clinicalbloodXraydata.predict(x1);
+			y2.print();
+			const y1 = model_clinicalbloodXraydata.predict(x1).argMax(-1);
+			y1.print();
+
+			// set Result
+			Predict_Finaloutcome = y1.reshape([-1]).arraySync()[0];
+			console.log(Predict_Finaloutcome)
+			});
+		}
+		// End of run_clinicalbloodXraydata(): Deep Learning inference
+        
+		// double the ProbabilityForAbnormal
+		async function run_clinicalbloodimaging(Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+			Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, ProbabilityForAbnormal) {
+		    ProbabilityForAbnormal = judge_Pneumonia();  // Calculate the probability of pneumonia and assign it to Probabilityforabnormal
+			console.log(ProbabilityForAbnormal);
+            // return after setting Predict_Finaloutcome
+			tf.tidy(() => {
+			const x1 = tf.tensor2d([[Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
+				Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, ProbabilityForAbnormal*2]]);
+			x1.print();
+			const y1 = model_clinicalbloodXraydata.predict(x1).argMax(-1);
+			y1.print();
+            
+			// set Result
+			Predict_Finaloutcome = y1.reshape([-1]).arraySync()[0];
+			console.log(Predict_Finaloutcome)
+			});
+		}
+		// End of run_clinicalbloodimaging(): Deep Learning inference
+
+		let display_result_area = document.getElementById('Predict')
+		// display result[Predict_Finaloutcome]
+		// set display value  // color set
+		function display_result() {
+			if (Predict_Finaloutcome == 0) {
+				display_result_area.textContent = "Mild";
+				display_result_area.style.color = "blue";
+			}
+			else if (Predict_Finaloutcome == 1) {
+				display_result_area.textContent = "ModerateⅠ";
+				display_result_area.style.color = "green";
+			}
+			else if (Predict_Finaloutcome == 2) {
+				display_result_area.textContent = "ModerateⅡ";
+				display_result_area.style.color = "orange";
+			}
+			else {
+				display_result_area.textContent = "Severe";
+				display_result_area.style.color = "red";
+			}
+			// End of setting display values and color set
+		}
+
+		// if input clinical data then run keisan_clinicaldataOnly
+		async function keisan_clinicaldataOnly() {
+			// if inputs are not completed tnen alert and return
+			if (check_input_of_clinicaldata() == 0) { return 0; }
+			// pass to Deep Learning inference[run_clinicaldataOnly()]
+			await run_clinicaldataOnly(parseFloat(Sex), parseFloat(Time_from_onset), parseFloat(Age), parseFloat(BMI),
+				parseFloat(SpO2), Body_temperature, parseFloat(Diabetes), parseFloat(Hypertension),
+				parseFloat(Hyperlipemia), parseFloat(Hyperuricemia), parseFloat(Chronic_obstructive_pulmonary_disease),
+				parseFloat(Cardio_vasucular_disease), parseFloat(Smoking_history), parseFloat(Malignant_neoplasm),
+				parseFloat(Asthma));
+			console.log(Predict_Finaloutcome)
+
+			display_result();
+		}
+		// End of keisan_clinicaldataOnly(): OnClick, analyze input, pass to Deep Learning inference[run_clinicaldataOnly()], display
+
+		// if input clinical and blood data then run_clinicalblooddata keisan_clinicalblooddata
+		async function keisan_clinicalblooddata() {
+			// if clinical inputs are not completed tnen alert and return
+			if (check_input_of_clinicaldata() == 0) { return 0; }
+			// if blood inputs are not completed tnen alert and return
+			if (check_input_of_blood_data() == 0) { return 0; }
+			// pass to Deep Learning inference[run_clinicalblooddata()]
+			await run_clinicalblooddata(parseFloat(Sex), parseFloat(Time_from_onset), parseFloat(Age), parseFloat(BMI),
+				parseFloat(SpO2), parseFloat(Body_temperature), parseFloat(Diabetes), parseFloat(Hypertension),
+				parseFloat(Hyperlipemia), parseFloat(Hyperuricemia), parseFloat(Chronic_obstructive_pulmonary_disease),
+				parseFloat(Cardio_vasucular_disease), parseFloat(Smoking_history), parseFloat(Malignant_neoplasm),
+				parseFloat(Asthma), parseFloat(D_dimer), parseFloat(C_reactive_protein), parseFloat(Lactate_dehydrogenase),
+				parseFloat(Lymphocyte), parseFloat(Creatinine), parseFloat(Urea_nitrogen));
+			console.log(Predict_Finaloutcome)
+
+			display_result();
+		}
+		// End of keisan_clinicalblooddata(): OnClick, analyze input, pass to Deep Learning inference[run_clinicalblooddata()], display
+
+		// if input clinical, blood and chest radiograph data then run_clinicalbloodxraydata keisan_clinicalbloodxraydata
+		async function keisan_clinicalbloodXraydata() {
+			// if clinical inputs are not completed tnen alert and return
+			if (check_input_of_clinicaldata() == 0) { return 0; }
+			// if blood inputs are not completed tnen alert and return
+			if (check_input_of_blood_data() == 0) { return 0; }
+			// if Chest radiograph inputs are not completed tnen alert and return
+			if (check_input_of_Chest_radiographdata() == 0) { return 0; }
+			// pass to Deep Learning inference[run_clinicalbloodXraydata()]
+			await run_clinicalbloodXraydata(parseFloat(Sex), parseFloat(Time_from_onset), parseFloat(Age), parseFloat(BMI),
+				parseFloat(SpO2), parseFloat(Body_temperature), parseFloat(Diabetes), parseFloat(Hypertension),
+				parseFloat(Hyperlipemia), parseFloat(Hyperuricemia), parseFloat(Chronic_obstructive_pulmonary_disease),
+				parseFloat(Cardio_vasucular_disease), parseFloat(Smoking_history), parseFloat(Malignant_neoplasm),
+				parseFloat(Asthma), parseFloat(D_dimer), parseFloat(C_reactive_protein), parseFloat(Lactate_dehydrogenase),
+				parseFloat(Lymphocyte), parseFloat(Creatinine), parseFloat(Urea_nitrogen),parseFloat(Chest_radiograph));
+			console.log(Predict_Finaloutcome)
+
+			display_result();
+		}
+		// End of keisan_clinicalbloodxraydata(): OnClick, analyze input, pass to Deep Learning inference[run_clinicalbloodxraydata()], display
+
+		// if input clinical, blood and chest radiograph data using AI then run keisan_clinicalbloodimaging
+		async function keisan_clinicalbloodimaging() {
+			// if clinical inputs are not completed tnen alert and return
+			if (check_input_of_clinicaldata() == 0) { return 0; }
+			// if blood inputs are not completed tnen alert and return
+			if (check_input_of_blood_data() == 0) { return 0; }
+			// if chest images inputs are not completed tnen alert and return
+			if (check_input_of_Chest_radiographimage() == 0) {return 0;}
+			// pass to Deep Learning inference[run_clinicalbloodimaging()]
+			await run_clinicalbloodimaging(parseFloat(Sex), parseFloat(Time_from_onset), parseFloat(Age), parseFloat(BMI),
+				parseFloat(SpO2), parseFloat(Body_temperature), parseFloat(Diabetes), parseFloat(Hypertension),
+				parseFloat(Hyperlipemia), parseFloat(Hyperuricemia), parseFloat(Chronic_obstructive_pulmonary_disease),
+				parseFloat(Cardio_vasucular_disease), parseFloat(Smoking_history), parseFloat(Malignant_neoplasm),
+				parseFloat(Asthma), parseFloat(D_dimer), parseFloat(C_reactive_protein), parseFloat(Lactate_dehydrogenase),
+				parseFloat(Lymphocyte), parseFloat(Creatinine), parseFloat(Urea_nitrogen),parseFloat(ProbabilityForAbnormal));
+			console.log(Predict_Finaloutcome)
+
+			display_result();
+		}
+		// End of keisan_clinicalbloodimaging(): OnClick, analyze input, pass to Deep Learning inference[run_clinicalbloodimaging()], display
 	
-	// Checking Chronic obstructive pulmonary disease input
-	let input_Chronic_obstructive_pulmonary_disease = document.querySelector("input[name=Chronic_obstructive_pulmonary_disease]:checked");
-	if( input_Chronic_obstructive_pulmonary_disease ) {
-		Chronic_obstructive_pulmonary_disease = input_Chronic_obstructive_pulmonary_disease.value;
-		console.log(Chronic_obstructive_pulmonary_disease);
-	}
-	else { // Alert when no input for Chronic obstructive pulmonary disease
-	    alert("Please select Chronic obstructive pulmonary disease");
-		return 0;
-	}
-	//console.log(Chronic obstructive pulmonary disease);
-    
-	// Checking Cardio vasucular disease input
-	let input_Cardio_vasucular_disease = document.querySelector("input[name=Cardio_vasucular_disease]:checked");
-	if( input_Cardio_vasucular_disease ) {
-		Cardio_vasucular_disease = input_Cardio_vasucular_disease.value;
-		console.log(Cardio_vasucular_disease);
-	}
-	else { // Alert when no input for Cardio vasucular disease
-	    alert("Please select Cardio vasucular disease");
-		return 0;
-	}
-	//console.log(Cardio vasucular disease);
-    
-	// Checking Smoking history input
-	let input_Smoking_history = document.querySelector("input[name=Smoking_history]:checked");
-	if( input_Smoking_history ) {
-		Smoking_history = input_Smoking_history.value;
-		console.log(Smoking_history);
-	}
-	else { // Alert when no input for Smoking history
-	    alert("Please select Smoking history");
-		return 0;
-	}
-	//console.log(Smoking history);
+	</script>
+	<!-- Warning for javascript not enabling -->
+	<noscript>
+		<p><span style="color:red;">It does not work!</p>
+		<p><span style="color:red;">Please turn on Javascript in your browser!</p>
+	</noscript>
+</body>
 
-    // Checking Malignant neoplasm input
-	let input_Malignant_neoplasm = document.querySelector("input[name=Malignant_neoplasm]:checked");
-	if( input_Malignant_neoplasm ) {
-		Malignant_neoplasm = input_Malignant_neoplasm.value;
-		console.log(Malignant_neoplasm);
-	}
-	else { // Alert when no input for Malignant neoplasm
-	    alert("Please select Malignant neoplasm");
-		return 0;
-	}
-	//console.log(Malignant neoplasm);	
-
-	// Checking Asthma input
-	let input_Asthma = document.querySelector("input[name=Asthma]:checked");
-	if( input_Asthma ) {
-		Asthma = input_Asthma.value;
-		console.log(Asthma);
-	}
-	else { // Alert when no input for Asthma
-	    alert("Please select Asthma");
-		return 0;
-	}
-	//console.log(Asthma);	
-
-	// Get D-dimer value
-	targetElement = document.getElementById('D_dimer');
-	let D_dimer = targetElement.value;
-	//console.log(D-dimer);
-	// Alert when no input at D-dimer
-	// isNaN will be true if invalid number was entered
-	if ((! D_dimer) || isNaN(D_dimer)) {  // Alert when no input for D-dimer
-		alert("Please input D-dimer");
-		return 0;
-	} 
-
-	// Get C-reactive protein value
-	targetElement = document.getElementById('C_reactive_protein');
-	let C_reactive_protein = targetElement.value;
-	//console.log(C-reactive protein);
-	// Alert when no input at C-reactive protein
-	// isNaN will be true if invalid number was entered
-	if ((! C_reactive_protein) || isNaN(C_reactive_protein)) {  // Alert when no input for C-reactive protein
-		alert("Please input C-reactive protein");
-		return 0;
-	} 
-
-	// Get Lactate Dehydrogenase value
-	targetElement = document.getElementById('Lactate_dehydrogenase');
-	let Lactate_dehydrogenase = targetElement.value;
-	//console.log(Lactate Dehydrogenase);
-	// Alert when no input at Lactate Dehydrogenase
-	// isNaN will be true if invalid number was entered
-	if ((! Lactate_dehydrogenase) || isNaN(Lactate_dehydrogenase)) {  // Alert when no input for Lactate Dehydrogenase
-		alert("Please input Lactate Dehydrogenase");
-		return 0;
-	} 
-
-	// Get Lymphocyte value
-	targetElement = document.getElementById('Lymphocyte');
-	let Lymphocyte = targetElement.value;
-	//console.log(Lymphocyte);
-	// Alert when no input at Lymphocyte
-	// isNaN will be true if invalid number was entered
-	if ((! Lymphocyte) || isNaN(Lymphocyte)) {  // Alert when no input for Lymphocyte
-		alert("Please input Lymphocyte");
-		return 0;
-	} 
-
-	// Get Creatinine value
-	targetElement = document.getElementById('Creatinine');
-	let Creatinine = targetElement.value;
-	//console.log(Creatinine);
-	// Alert when no input at Creatinine
-	// isNaN will be true if invalid number was entered
-	if ((! Creatinine) || isNaN(Creatinine)) {  // Alert when no input for Creatinine
-		alert("Please input Creatinine");
-		return 0;
-	} 
-
-	// Get Urea nitrogen value
-	targetElement = document.getElementById('Urea_nitrogen');
-	let Urea_nitrogen = targetElement.value;
-	//console.log(Urea nitrogen);
-	// Alert when no input at Urea nitrogen
-	// isNaN will be true if invalid number was entered
-	if ((! Urea_nitrogen) || isNaN(Urea_nitrogen)) {  // Alert when no input for Urea nitrogen
-		alert("Please input Urea nitrogen");
-		return 0;
-	} 
-
-	// Checking Chest radiograph input
-	let input_Chest_radiograph = document.querySelector("input[name=Chest_radiograph]:checked");
-	if( input_Chest_radiograph ) {
-		Chest_radiograph = input_Chest_radiograph.value;
-		console.log(Chest_radiograph);
-	}
-	else { // Alert when no input for Chest radiograph
-	    alert("Please select Chest_radiograph");
-		return 0;
-	}
-	//console.log(Chest radiograph);	
-
-	<!-- pass to Deep Learning inference [run()] -->
-    await run(parseFloat(Sex), parseFloat(Time_from_onset), parseFloat(Age), parseFloat(BMI), parseFloat(SpO2), parseFloat(Body_temperature), parseFloat(Diabetes), parseFloat(Hypertension), parseFloat(Hyperlipemia), parseFloat(Hyperuricemia),
-	parseFloat(Chronic_obstructive_pulmonary_disease), parseFloat(Cardio_vasucular_disease), parseFloat(Smoking_history), parseFloat(Malignant_neoplasm), parseFloat(Asthma), parseFloat(D_dimer), parseFloat(C_reactive_protein), parseFloat(Lactate_dehydrogenase),
-	parseFloat(Lymphocyte), parseFloat(Creatinine), parseFloat(Urea_nitrogen), parseFloat(Chest_radiograph));
-    //console.log(Predict_Finaloutcome)
-   
-	<!--  display result  [Predict_Finaloutcome] -->
-     <!-- set display value -->
-	 if(Predict_Finaloutcome <= 0){
-        document.getElementById('Predict').textContent =  "Mild";
-	 }else if(Predict_Finaloutcome <= 1){
-		document.getElementById('Predict').textContent =  "ModerateⅠ";
-	 }else if(Predict_Finaloutcome <= 2){
-		document.getElementById('Predict').textContent =  "ModerateⅡ";
-	 }else{
-		document.getElementById('Predict').textContent =  "Severe";
-	 }
-     <!-- color set -->
-     let elem = document.getElementById('DisplayProbability')
-     if (Predict_Finaloutcome <= 0){
-      elem.style.color = "lightskyblue";
-     }else if (Predict_Finaloutcome <= 1){
-      elem.style.color = "green";
-	 }else if (Predict_Finaloutcome <= 2){
-      elem.style.color = "orange";
-     }else{
-      elem.style.color = "red";
-     } <!-- End of color set -->
-    }
-
-    <!-- End of keisan(): OnClick, analyze input, pass to Deep Learning inference [run()], display result  [Predict_Finaloutcome] -->
-   
-    <!-- Deep Learning inference -->
-    async function run(Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
-	Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, Chest_radiograph){
-    // return after setting Predict_Finaloutcome
-    const model = await tf.loadLayersModel('./model.json');
-
-    const x1 = tf.tensor2d([[Sex, Time_from_onset, Age, BMI, SpO2, Body_temperature, Diabetes, Hypertension, Hyperlipemia, Hyperuricemia, Chronic_obstructive_pulmonary_disease, Cardio_vasucular_disease,
-	Smoking_history, Malignant_neoplasm, Asthma, D_dimer, C_reactive_protein, Lactate_dehydrogenase, Lymphocyte, Creatinine, Urea_nitrogen, Chest_radiograph]]); 
-    x1.print(); 
-    const y1 = model.predict(x1).argMax(-1); 
-    y1.print();
-
-    // set Result
-    Predict_Finaloutcome = y1.reshape([-1]).arraySync()[0];
-    console.log(Predict_Finaloutcome)
-    }
-    <!-- End of run(): Deep Learning inference -->
-    </script>
-  </body>
 </html>
-
-<!-- 
-diagnosis	gender	Rin5	Rex5	Rin20	Rex20	X5in	X5ex	Fresin	Fresex	ALXin	ALXex
-0	1	1.07	1.36	1.72	1.98	-0.22	-0.16	6.03	5.74	0.7	0.58
-1	0	2.98	4.43	2.5	2.69	-0.73	-2.93	11.38	21.1	3.15	24.07
--->
